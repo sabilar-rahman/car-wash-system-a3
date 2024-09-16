@@ -3,6 +3,7 @@ import { Response } from 'express';
 type TResponse<T> = {
   statusCode: number;
   success: boolean;
+  token?: string;
   message?: string;
   data: T;
 };

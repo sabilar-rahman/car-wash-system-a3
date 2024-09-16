@@ -2,11 +2,12 @@
 import AppError from "../../errors/AppError";
 import { Service } from "../service/service.model";
 import { SlotModel } from "../slot/slot.model";
+import { UserModel } from "../user/user.model";
 import { TBooking } from "./booking.interface";
 import { BookingModel } from "./booking.model";
 
 const createBookingIntoDB = async (payload: TBooking) => {
-  const isCustomerExists = await User.findById(payload?.customer);
+  const isCustomerExists = await UserModel.findById(payload?.customer);
   if (!isCustomerExists) {
     throw new AppError(404, "Customer not found!");
   }
