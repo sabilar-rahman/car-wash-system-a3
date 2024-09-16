@@ -1,3 +1,5 @@
+import { Model } from "mongoose";
+
 export type TService = {
   name: string;
   description: string;
@@ -5,3 +7,7 @@ export type TService = {
   duration: number;
   isDeleted: boolean;
 };
+
+export interface ServiceModel extends Model<TService> {
+  isServiceExists(id: string): Promise<TService>
+}
