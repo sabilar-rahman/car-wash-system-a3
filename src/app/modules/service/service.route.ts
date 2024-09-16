@@ -1,7 +1,9 @@
 import express from "express";
 import { ServiceController } from "./service.controller";
 import ValidateRequest from "../../middlewares/ValidateRequest";
-import serviceValidationSchema from "./service.validation";
+import { serviceValidation } from "./service.validation";
+
+
 
 const router = express.Router();
 
@@ -9,8 +11,17 @@ const router = express.Router();
 
 router.post(
   "/",
-  ValidateRequest(serviceValidationSchema),
+  ValidateRequest(serviceValidation.serviceCreateValidationSchema),
   ServiceController.createService
 );
 
+router.get("/", ServiceController.getAllServices);
+
+router.get("/:id", ServiceController.getSingleService);
+
+
+router.patch('/:id',ValidateRequest(serviceValidation.serviceUpdateValidationSchema),ServiceController.updateSingleService)
+
+
+router.delete('/:id',ServiceController.deleteSingleService)
 export const ServiceRoutes = router;
