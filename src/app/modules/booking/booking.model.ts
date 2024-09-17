@@ -6,7 +6,7 @@ const bookingSchema = new Schema<TBooking>(
     {
       customer: {
         type: Schema.Types.ObjectId,
-        required: true,
+       
         ref: 'user',
       },
       service: {
@@ -40,5 +40,15 @@ const bookingSchema = new Schema<TBooking>(
     },
     { timestamps: true },
   )
+
+
+  bookingSchema.methods.toJSON = function () {
+    const obj = this.toObject()
+    delete obj.customer.role
+    return obj
+  }
+
+
+
 
   export const BookingModel = model<TBooking>('booking', bookingSchema);
