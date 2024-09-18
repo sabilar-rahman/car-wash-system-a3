@@ -4,265 +4,127 @@ import AppError from "../../errors/AppError";
 import { Service } from "../service/service.model";
 import { SlotModel } from "../slot/slot.model";
 import { UserModel } from "../user/user.model";
-import { ICarServiceBookingPayload, TBooking} from "./booking.interface";
+import { TBooking } from "./booking.interface";
 import { BookingModel } from "./booking.model";
 import mongoose from "mongoose";
-import httpStatus from "http-status";
+
+// ============================================================
+// Booking Services
+// ============================================================
 
 /**
-const createBookingIntoDB = async (payload: TBooking, user?: JwtPayload) => {
-  const isCustomerExists = await UserModel.findById(payload?.customer);
-  if (!isCustomerExists) {
-    throw new AppError(404, "Customer not found!");
-  }
-  const serviceId: any = payload?.service;
-  const service = await Service.isServiceExists(serviceId);
-  if (!service) {
-    throw new AppError(404, "Service not found!");
-  }
-  if (service.isDeleted) {
-    throw new AppError(400, "Unable to book, service is deleted");
-  }
-  const isSlotExists = await SlotModel.findById(payload.slot);
-  if (!isSlotExists) {
-    throw new AppError(404, "Slot not found!");
-  }
-  if (isSlotExists.isBooked === "booked") {
-    throw new AppError(404, "Slot is booked!");
-  }
-
-  // const result = await BookingModel.create(payload);
-
-  const result = (
-    await (
-      await (await BookingModel.create(payload)).populate("customer")
-    ).populate("service")
-  ).populate("slot");
-
-  return result;
-};
- */
-
-
-/**
- * Creates a booking document in the database. The booking payload must contain
- * a customerId which is the ObjectId of an existing user document. The service
- * and slot specified in the payload must exist in the database and the slot
- * must be available (i.e. isBooked is not equal to "booked").
+ * Creates a booking in the database.
  *
- * This function is transactional, meaning that it will be retried if a
- * transaction fails due to a database error. If the transaction fails for any
- * other reason, the error is propagated up the call stack.
+ * This function initiates a database transaction to create a booking and
+ * update the slot status. It ensures that the customer, service, and slot
+ * exist, and that the slot is available before proceeding with the booking.
  *
- * @param {TBooking} payload - The booking payload.
- * @param {JwtPayload} user - The user who is booking the service.
- * @returns {Promise<TBooking>} The created booking document.
- * @throws {AppError} If the user, service, or slot does not exist, or if the
- *   slot is already booked.
+ * Key functionalities:
+ * - Check if the user (customer) exists
+ * - Validate the service and slot availability
+ * - Create a booking and update the slot status in a single transaction
+ *
+ * @param {TBooking} payload - The booking data
+ * @param {JwtPayload} user - The authenticated user's details (customer)
+ * @returns {Promise<Booking>} - The newly created booking
+ * @throws {AppError} - If any validation fails (customer, service, slot, etc.)
  */
-
-/*
 
 const createBookingIntoDB = async (payload: TBooking, user: JwtPayload) => {
   const session = await mongoose.startSession();
+
   try {
     session.startTransaction();
-    //find user from db
+
+    // ------------------------------------------------------------
+    // 1. Find Customer (User) from the Database
+    // ------------------------------------------------------------
     const customer = await UserModel.findOne({ email: user?.userEmail });
     const customerId = customer?._id;
-    //check user is exists or not
+
+    // Check if the customer exists
     if (!customer) {
       throw new AppError(404, "Customer not found");
     }
-    //check is service exists or not
+
+    // ------------------------------------------------------------
+    // 2. Validate Service Exists and Is Available
+    // ------------------------------------------------------------
     const serviceId: any = payload?.service;
     const service = await Service.isServiceExists(serviceId);
+
+    // Check if the service exists
     if (!service) {
       throw new AppError(404, "Service not found!");
     }
-    // check service deleted or not
+
+    // Check if the service is deleted
     if (service.isDeleted) {
       throw new AppError(400, "Unable to book, service is deleted");
     }
-    //check slots exists or not
+
+    // ------------------------------------------------------------
+    // 3. Validate Slot Exists and Is Available
+    // ------------------------------------------------------------
     const isSlotExists = await SlotModel.findById(payload.slot);
+
+    // Check if the slot exists
     if (!isSlotExists) {
       throw new AppError(404, "Slot not found!");
     }
-    //check slots is booked or available
+
+    // Check if the slot is already booked
     if (isSlotExists.isBooked === "booked") {
       throw new AppError(404, "Slot is already booked!");
     }
-    //creating booking- transaction-1
+
+    // ------------------------------------------------------------
+    // 4. Create Booking and Update Slot Status in a Transaction
+    // ------------------------------------------------------------
+    // Create the booking (transaction-1)
     const [booking] = await BookingModel.create(
       [{ ...payload, customer: customerId }],
       { session }
     );
-    // Populate the booking
-    (await (await booking.populate("customer")).populate("service")).populate(
-      "slot"
-    );
-    //updating slot status: transaction-2
-    await isSlotExists.updateOne(
+
+    // Update the slot's status to 'booked' (transaction-2)
+    await SlotModel.findByIdAndUpdate(
+      payload.slot,
       { isBooked: "booked" },
-      { session }
+      { new: true, session }
     );
+
+    // Commit the transaction
     await session.commitTransaction();
     await session.endSession();
+
     return booking;
   } catch (err) {
+    // Abort the transaction in case of error
     await session.abortTransaction();
     await session.endSession();
     throw err;
   }
 };
-
-*/
-
-
-const createBookingIntoDB = async (payload: TBooking, user: JwtPayload) => {
-  const session = await mongoose.startSession()
-  try {
-    session.startTransaction()
-    //find user from db
-    const customer = await UserModel.findOne({ email: user?.userEmail })
-    const customerId = customer?._id
-    //check user is exists or not
-    if (!customer) {
-      throw new AppError(404, 'Customer not found')
-    }
-    //check is service exists or not
-    const serviceId: any = payload?.service
-    const service = await Service.isServiceExists(serviceId)
-    if (!service) {
-      throw new AppError(404, 'Service not found!')
-    }
-    // check service deleted or not
-    if (service.isDeleted) {
-      throw new AppError(400, 'Unable to book, service is deleted')
-    }
-    //check slots exists or not
-    const isSlotExists = await SlotModel.findById(payload.slot)
-    if (!isSlotExists) {
-      throw new AppError(404, 'Slot not found!')
-    }
-    //check slots is booked or available
-    if (isSlotExists.isBooked === 'booked') {
-      throw new AppError(404, 'Slot is already booked!')
-    }
-    //creating booking- transaction-1
-    const [booking] = await BookingModel.create(
-      [{ ...payload, customer: customerId }],
-      { session },
-    )
-
-    //updating slot status: transaction-2
-    await SlotModel.findByIdAndUpdate(
-      payload.slot,
-      { isBooked: 'booked' },
-      { new: true, session },
-    )
-
-    await session.commitTransaction()
-    await session.endSession()
-    return booking
-  } catch (err) {
-    await session.abortTransaction()
-    await session.endSession()
-    throw err
-  }
-}
-
-
-// const createBookingIntoDB = async (
-//   payload: ICarServiceBookingPayload,
-//   email: string,
-// ) => {
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-
-//   try {
-//     // Find the customer by email
-//     const customer = await UserModel.findOne({ email });
-//     if (!customer) {
-//       throw new AppError(httpStatus.NOT_FOUND, "Customer not found");
-//     }
-
-//     // Find the car service by ID
-//     const isCarServiceExisting = await Service.findById(
-//       payload.serviceId,
-//     ).session(session);
-//     if (!isCarServiceExisting) {
-//       throw new AppError(httpStatus.NOT_FOUND, "Service is not found");
-//     }
-
-//     // Find the car booking slot by ID
-//     const isCarBookingSlotExisting = await SlotModel.findById(
-//       payload.slotId,
-//     ).session(session);
-//     if (!isCarBookingSlotExisting) {
-//       throw new AppError(httpStatus.NOT_FOUND, "Slot is not found");
-//     }
-
-//     // Check if the slot is available
-//     if (isCarBookingSlotExisting.isBooked === "available") {
-//       // Update the slot to booked
-//       await SlotModel.findByIdAndUpdate(
-//         payload.slotId,
-//         { isBooked: "booked" },
-//         { new: true, runValidators: true, session },
-//       );
-//     } else {
-//       throw new AppError(
-//         httpStatus.BAD_REQUEST,
-//         `Slot is already ${isCarBookingSlotExisting.isBooked}`,
-//       );
-//     }
-
-//     // Create the car service booking
-//     const result = await BookingModel.create(
-//       [
-//         {
-//           customer: customer._id,
-//           service: payload.serviceId,
-//           slot: payload.slotId,
-//           vehicleType: payload.vehicleType,
-//           vehicleBrand: payload.vehicleBrand,
-//           vehicleModel: payload.vehicleModel,
-//           manufacturingYear: payload.manufacturingYear,
-//           registrationPlate: payload.registrationPlate,
-//         },
-//       ],
-//       {
-//         session,
-//       },
-//     );
-
-//     // Populate the result with related data
-//     const populateResult = await BookingModel.findById(result[0]._id)
-//       .populate("customer")
-//       .populate("service")
-//       .populate("slot")
-//       .session(session);
-
-//     // Commit the transaction
-//     await session.commitTransaction();
-//     session.endSession();
-
-//     return populateResult;
-//   } catch (error) {
-//     // Abort the transaction in case of an error
-//     await session.abortTransaction();
-//     session.endSession();
-//     throw error;
-//   }
-// };
-
-
-
-
+/**
+ *
+ * Retrieves all bookings from the database.
+ *
+ * This function fetches all bookings and populates the customer, service,
+ * and slot fields to return detailed booking information.
+ *
+ * Key functionalities:
+ * - Fetch all bookings from the `BookingModel`
+ * - Populate the customer, service, and slot details
+ *
+ *
+ * @returns {Promise<Booking[]>} - An array of all bookings with details
+ */
 
 const getAllBookingsFromDB = async () => {
+  // ------------------------------------------------------------
+  // 1. Get All Bookings with Populated Fields
+  // ------------------------------------------------------------
   const result = await BookingModel.find()
     .populate("customer")
     .populate("service")
@@ -270,17 +132,36 @@ const getAllBookingsFromDB = async () => {
   return result;
 };
 
-
-
-
+/**
+ * Retrieves bookings for a specific user (customer) from the database.
+ *
+ * This function fetches all bookings made by a specific user and populates
+ * the customer, service, and slot fields for detailed information.
+ *
+ * Key functionalities:
+ * - Find the user by email
+ * - Fetch the user's bookings from the `BookingModel`
+ * - Populate the customer, service, and slot details
+ *
+ * @param {JwtPayload} user - The authenticated user's details (customer)
+ * @returns {Promise<Booking[]>} - An array of the user's bookings with details
+ */
 
 const getUserBookingsFromDB = async (user: JwtPayload) => {
+  // ------------------------------------------------------------
+  // 1. Find the User by Email
+  // ------------------------------------------------------------
   const customer = await UserModel.findOne({ email: user?.userEmail });
   const customerId = customer?._id;
+
+  // ------------------------------------------------------------
+  // 2. Get the User's Bookings with Populated Fields
+  // ------------------------------------------------------------
   const result = await BookingModel.find({ customer: customerId })
     .populate("customer")
     .populate("service")
     .populate("slot");
+
   return result;
 };
 

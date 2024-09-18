@@ -5,96 +5,35 @@ import sendResponse from "../utils/sendResponse";
 import { BookingServices } from "./booking.service";
 import { TBooking } from "./booking.interface";
 
+
+// ============================================================
+// Booking Controllers
+// ============================================================
+
 /**
-
-const createBooking = catchAsync(async (req, res) => {
-    const result = await BookingServices.createBookingIntoDB(req.body)
-    sendResponse(res, {
-      statusCode: 200,
-      success: true,
-      message: 'Booking successful',
-      data: result,
-    })
-  })
-
+ * Creates a new booking for a service.
+ *
+ * This controller extracts booking details from the request body,
+ * modifies the object to match the booking schema, and passes the
+ * user and booking details to the `BookingServices.createBookingIntoDB` service.
+ * The response includes the populated booking details.
+ *
+ * Key functionalities:
+ * - Extract booking details from request body
+ * - Modify the object to match the booking schema
+ * - Call service to create booking and populate customer, service, and slot details
+ * - Return a success message with the booking data
+ *
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @returns {Promise<void>}
  */
-
-/*
-
-const createBooking = catchAsync(async (req, res) => {
-  const user = req.user;
-  const {
-    serviceId: service,
-    slotId: slot,
-    vehicleType,
-    vehicleBrand,
-    vehicleModel,
-    manufacturingYear,
-    registrationPlate,
-  } = req.body;
-
-  const modifiedObj: TBooking = {
-    service: service,
-    slot: slot,
-    vehicleType,
-    vehicleBrand,
-    vehicleModel,
-    manufacturingYear,
-    registrationPlate,
-  };
-
-  /**
-  
-  const result = await BookingServices.createBookingIntoDB( modifiedObj,user);
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Booking successful",
-    data: result,
-  });
-});
-
-   */
-
-/*
-  const result = await (
-    await (
-      await (
-        await BookingServices.createBookingIntoDB(modifiedObj, user)
-      ).populate("customer")
-    ).populate(`service`)
-  ).populate(`slot`);
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Booking successful",
-    data: result,
-  });
-});
-
-
-*/
-
-// const createBooking = catchAsync(async (req, res) => {
-//   const { email } = req.user;
-
-//   const result = await BookingServices.createBookingIntoDB(req.body, email);
-
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: "Booking successful",
-//     data: result,
-//   });
-// });
-
-
-
-// --------------------------------------------------
-
 
 const createBooking = catchAsync(async (req, res) => {
   const user = req.user
+  // ------------------------------------------------------------
+  // 1. Extract Booking Details from Request Body
+  // ------------------------------------------------------------
   const {
     serviceId: service,
     slotId: slot,
@@ -105,6 +44,10 @@ const createBooking = catchAsync(async (req, res) => {
     registrationPlate,
   } = req.body
 
+  // ------------------------------------------------------------
+  // 2. Modify Object to Match Booking Schema
+  // ------------------------------------------------------------
+
   const modifiedObj: TBooking = {
     service: service,
     slot: slot,
@@ -114,6 +57,10 @@ const createBooking = catchAsync(async (req, res) => {
     manufacturingYear,
     registrationPlate,
   }
+
+  // ------------------------------------------------------------
+  // 3. Create Booking and Populate Related Fields
+  // ------------------------------------------------------------
   const result = await (
     await (
       await (
@@ -129,9 +76,24 @@ const createBooking = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * Retrieves all bookings from the database.
+ *
+ * This controller calls the `BookingServices.getAllBookingsFromDB` service
+ * to retrieve all the bookings and sends the data back in the response.
+ *
+ * Key functionalities:
+ * - Call service to get all bookings
+ * - Return a success message with the list of bookings
+ *
+ */
+
 
 
 const getAllBooking = catchAsync(async (req, res) => {
+   // ------------------------------------------------------------
+  // 1. Get All Bookings from the Database
+  // ------------------------------------------------------------
   const result = await BookingServices.getAllBookingsFromDB();
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -141,10 +103,24 @@ const getAllBooking = catchAsync(async (req, res) => {
   });
 });
 
-
+/**
+ * Retrieves bookings for the logged-in user.
+ *
+ * This controller gets the authenticated user's information from the request object,
+ * calls the `BookingServices.getUserBookingsFromDB` service to retrieve the user's
+ * bookings, and sends the data back in the response.
+ *
+ * Key functionalities:
+ * - Extract user information from request object
+ * - Call service to get bookings for the specific user
+ * - Return a success message with the user's bookings
+ */
 
 const getUserBookings = catchAsync(async (req, res) => {
   const user = req.user;
+  // ------------------------------------------------------------
+  // 1. Get Bookings for the Logged-in User
+  // ------------------------------------------------------------
   const result = await BookingServices.getUserBookingsFromDB(user);
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -154,45 +130,6 @@ const getUserBookings = catchAsync(async (req, res) => {
   });
 });
 
-/**
-const getUserBookings = catchAsync(async (req, res) => {
-  const user = req.user
-  const result = await BookingServices.getUserBookingsFromDB(user)
-  //transformed bookings
-  const tBooking = result.map(booking => ({
-    _id: booking._id,
-    service: {
-      _id: booking.service._id,
-      name: booking.service.name,
-      description: booking.service.description,
-      price: booking.service.price,
-      duration: booking.service.duration,
-      isDeleted: booking.service.isDeleted,
-    },
-    slot: {
-      _id: booking.slot._id,
-      service: booking.slot.service,
-      date: booking.slot.date,
-      startTime: booking.slot.startTime,
-      endTime: booking.slot.endTime,
-      isBooked: booking.slot.isBooked,
-    },
-    vehicleType: booking.vehicleType,
-    vehicleBrand: booking.vehicleBrand,
-    vehicleModel: booking.vehicleModel,
-    manufacturingYear: booking.manufacturingYear,
-    registrationPlate: booking.registrationPlate,
-    createdAt: booking.createdAt,
-    updatedAt: booking.updatedAt,
-  }))
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "User bookings retrieved successfully",
-    data: tBooking,
-  });
-})
- */
 
 export const BookingController = {
   createBooking,
