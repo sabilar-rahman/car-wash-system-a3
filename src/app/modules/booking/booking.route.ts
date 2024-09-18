@@ -5,21 +5,20 @@ import { BookingController } from "./booking.controller";
 import auth from "../../middlewares/auth";
 import { USER_ROLE } from "../user/user.constant";
 
-const router = Router();
-
-router.post(
-  "/bookings",
-  auth(USER_ROLE.user),
+const routerNo1 = Router();
+const routerNo11 = Router();
+const routerNo2 = Router();
+// different route
+routerNo1.post(
+  "/",
+auth(USER_ROLE.user),
   ValidateRequest(BookingValidation.bookingCreateValidationSchema),
   BookingController.createBooking
 );
+routerNo11.get("/", auth(USER_ROLE.user), BookingController.getUserBookings);
 
-router.get("/bookings", auth(USER_ROLE.admin), BookingController.getAllBooking);
+routerNo2.get("/", auth(USER_ROLE.admin), BookingController.getAllBooking);
 
-router.get(
-  "/my-bookings",
-  auth(USER_ROLE.user),
-  BookingController.getUserBookings
-);
-
-export const BookingRoutes = router;
+export const UserPostBookingRoutes = routerNo1;
+export const UserGetBookingRoutes = routerNo11;
+export const AdminBookingRoutes = routerNo2;

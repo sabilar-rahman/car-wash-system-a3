@@ -8,7 +8,7 @@ import { USER_ROLE } from "../user/user.constant";
 const router = Router();
 
 router.post(
-  "/slots",auth(USER_ROLE.admin),
+  "/",auth(USER_ROLE.admin),
   ValidateRequest(SlotValidations.slotCreateValidationSchema),
   SlotController.createSlot
 );

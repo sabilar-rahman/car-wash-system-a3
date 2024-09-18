@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { ServiceRoutes } from "../modules/service/service.route";
 import { SlotRoutes } from "../modules/slot/slot.route";
-import { BookingRoutes } from "../modules/booking/booking.route";
+import { AdminBookingRoutes, BookingRoutes, UserBookingRoutes, UserGetBookingRoutes, UserPostBookingRoutes } from "../modules/booking/booking.route";
 import { AuthRoutes } from "../modules/auth/auth.route";
 
 const router = Router();
@@ -15,8 +15,9 @@ const moduleRoutes = [
     path: "/services",
     route: ServiceRoutes,
   },
+ 
   {
-    path: "/services",
+    path: "/services/slots",
     route: SlotRoutes,
   },
   {
@@ -25,12 +26,21 @@ const moduleRoutes = [
   },
   {
     path: "/bookings",
-    route: BookingRoutes,
+    route: UserPostBookingRoutes,
   },
   {
     path: "/my-bookings",
-    route: BookingRoutes,
+    route: UserGetBookingRoutes,
   },
+
+  {
+    path: "/bookings",
+    route: AdminBookingRoutes,
+  },
+  // {
+  //   path: "/my-bookings",
+  //   route: BookingRoutes,
+  // },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

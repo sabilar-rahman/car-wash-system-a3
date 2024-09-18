@@ -24,3 +24,11 @@ export type TBooking = {
   createdAt?: Date
   updatedAt?: Date
 };
+
+// export interface TTBooking extends Document, TBooking {}
+
+// export interface ICarServiceBookingPayload
+//   extends Omit<TBooking, "service" | "slot"> {
+//   serviceId: string;
+//   slotId: string;
+// }

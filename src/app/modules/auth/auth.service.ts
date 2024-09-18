@@ -13,6 +13,9 @@ const registeredUserIntoDB = async (payload: TUser) => {
 };
 // login user service
 
+
+/**
+ * 
 const loginUser = async (payload: TLoginUser) => {
   const user = await UserModel.findOne({ email: payload.email }).select(
     "+password"
@@ -40,6 +43,37 @@ const loginUser = async (payload: TLoginUser) => {
     user,
   };
 };
+ */
+
+
+const loginUser = async (payload: TLoginUser) => {
+  const user = await UserModel.findOne({ email: payload.email }).select('+password')
+  // check user exists
+  if (!user) {
+    throw new AppError(status.NOT_FOUND, 'User does not exists!')
+  }
+  // check password
+  const isPasswordMatched = await bcrypt.compare(
+    payload?.password,
+    user?.password,
+  )
+  if (!isPasswordMatched) {
+    throw new AppError(400, 'Password do not matched!')
+  }
+  const jwtPayload = {
+    userEmail: user?.email,
+    role: user?.role,
+  }
+  const accessToken = jwt.sign(jwtPayload, config.jwt_access_secret as string, {
+    expiresIn: config.jwt_access_expires_in,
+  })
+  return {
+    accessToken: accessToken,
+    user,
+  }
+}
+
+
 
 export const AuthServices = {
   registeredUserIntoDB,

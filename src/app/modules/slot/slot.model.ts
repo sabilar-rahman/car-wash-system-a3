@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import  { model, Schema } from "mongoose";
 import { TSlot } from "./slot.interface";
 
 
@@ -28,9 +28,10 @@ const slotSchema = new Schema<TSlot>(
         type: String,
         enum: ['available', 'booked', 'canceled'],
         required: true,
+        default: 'available',
       },
     },
     { timestamps: true },
   )
 
-  export const SlotModel = mongoose.model<TSlot>('slot', slotSchema);
+  export const SlotModel = model<TSlot>('slot', slotSchema);
