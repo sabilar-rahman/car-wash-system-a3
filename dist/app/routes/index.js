@@ -16,10 +16,6 @@ const moduleRoutes = [
         route: service_route_1.ServiceRoutes,
     },
     {
-        path: "/services/slots",
-        route: slot_route_1.SlotRoutes,
-    },
-    {
         path: "/slots",
         route: slot_route_1.SlotRoutes,
     },

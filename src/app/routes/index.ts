@@ -21,10 +21,6 @@ const moduleRoutes = [
   },
 
   {
-    path: "/services/slots",
-    route: SlotRoutes,
-  },
-  {
     path: "/slots",
     route: SlotRoutes,
   },
